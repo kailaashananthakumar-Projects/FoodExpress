@@ -1,0 +1,200 @@
+{% extends "base.html" %}
+{% block title %}Admin Dashboard — FoodExpress{% endblock %}
+{% block extra_css %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+{% endblock %}
+{% block content %}
+<div class="dashboard-page admin-dashboard">
+    <div class="dashboard-header admin-header">
+        <div class="container">
+            <div class="dashboard-welcome">
+                <div class="dashboard-avatar admin-avatar"><i class="fas fa-shield-alt"></i></div>
+                <div>
+                    <h1>Admin Dashboard</h1>
+                    <p>FoodExpress Management Panel</p>
+                </div>
+            </div>
+            <div class="admin-nav-pills">
+                <a href="{{ url_for('admin.dashboard') }}" class="pill active">Dashboard</a>
+                <a href="{{ url_for('admin.orders') }}" class="pill">Orders</a>
+                <a href="{{ url_for('admin.customers') }}" class="pill">Customers</a>
+                <a href="{{ url_for('admin.restaurants') }}" class="pill">Restaurants</a>
+                <a href="{{ url_for('admin.agents') }}" class="pill">Agents</a>
+                <a href="{{ url_for('admin.categories') }}" class="pill">Categories</a>
+                <a href="{{ url_for('admin.reports') }}" class="pill">Reports</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <!-- Stats -->
+        <div class="stats-grid admin-stats">
+            <div class="stat-card">
+                <div class="stat-icon orange"><i class="fas fa-shopping-bag"></i></div>
+                <div class="stat-info">
+                    <h3>{{ stats.total_orders or 0 }}</h3>
+                    <p>Total Orders</p>
+                    <small>{{ stats.today_orders or 0 }} today</small>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon green"><i class="fas fa-rupee-sign"></i></div>
+                <div class="stat-info">
+                    <h3>₹{{ "%.0f"|format(stats.total_revenue or 0) }}</h3>
+                    <p>Total Revenue</p>
+                    <small>₹{{ "%.0f"|format(stats.today_revenue or 0) }} today</small>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon blue"><i class="fas fa-users"></i></div>
+                <div class="stat-info">
+                    <h3>{{ stats.total_customers or 0 }}</h3>
+                    <p>Customers</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon purple"><i class="fas fa-store"></i></div>
+                <div class="stat-info">
+                    <h3>{{ stats.total_restaurants or 0 }}</h3>
+                    <p>Restaurants</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon red"><i class="fas fa-clock"></i></div>
+                <div class="stat-info">
+                    <h3>{{ stats.pending_orders or 0 }}</h3>
+                    <p>Pending Orders</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon teal"><i class="fas fa-motorcycle"></i></div>
+                <div class="stat-info">
+                    <h3>{{ stats.total_agents or 0 }}</h3>
+                    <p>Delivery Agents</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="dashboard-grid-3">
+            <!-- Revenue Chart -->
+            <div class="dashboard-card span-2">
+                <h3><i class="fas fa-chart-line"></i> Revenue (Last 7 Days)</h3>
+                <canvas id="revenueChart" height="120"></canvas>
+            </div>
+
+            <!-- Unassigned Orders -->
+            <div class="dashboard-card">
+                <h3><i class="fas fa-exclamation-circle text-orange"></i> Need Agent Assignment</h3>
+                {% if unassigned_orders %}
+                    {% for order in unassigned_orders[:5] %}
+                    <div class="assign-item">
+                        <div>
+                            <strong>#{{ order.id }}</strong> — {{ order.restaurant_name }}<br>
+                            <small>{{ order.customer_name }}</small>
+                        </div>
+                        <form method="POST" action="{{ url_for('admin.assign_agent', order_id=order.id) }}">
+                            <select name="agent_id" class="form-control form-control-sm" required>
+                                <option value="">Select Agent</option>
+                                {% for agent in available_agents %}
+                                <option value="{{ agent.id }}">{{ agent.name }}</option>
+                                {% endfor %}
+                            </select>
+                            <button type="submit" class="btn btn-sm btn-primary mt-1">Assign</button>
+                        </form>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                <div class="empty-state small">
+                    <i class="fas fa-check-circle text-green"></i>
+                    <p>All orders assigned!</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Recent Orders Table -->
+        <div class="dashboard-card">
+            <div class="card-header-row">
+                <h3><i class="fas fa-list"></i> Recent Orders</h3>
+                <a href="{{ url_for('admin.orders') }}" class="btn btn-sm btn-outline">View All</a>
+            </div>
+            <div class="table-responsive">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Customer</th>
+                            <th>Restaurant</th>
+                            <th>Amount</th>
+                            <th>Status</th>
+                            <th>Payment</th>
+                            <th>Date</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for order in recent_orders %}
+                        <tr>
+                            <td><a href="{{ url_for('admin.orders') }}">#{{ order.id }}</a></td>
+                            <td>{{ order.customer_name }}</td>
+                            <td>{{ order.restaurant_name }}</td>
+                            <td>₹{{ "%.2f"|format(order.total_amount) }}</td>
+                            <td><span class="order-status status-{{ order.status }}">{{ order.status.replace('_',' ').title() }}</span></td>
+                            <td><span class="badge badge-{{ 'success' if order.payment_status=='paid' else 'warning' }}">{{ order.payment_status.title() }}</span></td>
+                            <td>{{ order.created_at.strftime('%d/%m %H:%M') if order.created_at else '' }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+{% block extra_js %}
+<script>
+const chartData = {{ chart_data | tojson }};
+const labels = chartData.map(d => d.date ? d.date.toString() : '');
+const revenues = chartData.map(d => parseFloat(d.revenue) || 0);
+const orders = chartData.map(d => parseInt(d.order_count) || 0);
+
+const ctx = document.getElementById('revenueChart');
+if (ctx && chartData.length > 0) {
+    new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels,
+            datasets: [
+                {
+                    label: 'Revenue (₹)',
+                    data: revenues,
+                    backgroundColor: 'rgba(255,107,0,0.7)',
+                    borderColor: '#ff6b00',
+                    borderWidth: 1,
+                    yAxisID: 'y',
+                },
+                {
+                    label: 'Orders',
+                    data: orders,
+                    type: 'line',
+                    borderColor: '#2ecc71',
+                    backgroundColor: 'rgba(46,204,113,0.1)',
+                    borderWidth: 2,
+                    fill: true,
+                    yAxisID: 'y1',
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            interaction: { mode: 'index', intersect: false },
+            scales: {
+                y: { type: 'linear', position: 'left', beginAtZero: true },
+                y1: { type: 'linear', position: 'right', beginAtZero: true, grid: { drawOnChartArea: false } }
+            }
+        }
+    });
+} else if (ctx) {
+    ctx.parentElement.innerHTML = '<div class="empty-state small"><i class="fas fa-chart-bar"></i><p>No data yet. Orders will appear here.</p></div>';
+}
+</script>
+{% endblock %}

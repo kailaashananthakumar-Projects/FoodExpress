@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block title %}Categories — Admin{% endblock %}
+{% block content %}
+<div class="page-header">
+    <div class="container">
+        <h1><i class="fas fa-tags"></i> Food Categories</h1>
+    </div>
+</div>
+<section class="section">
+    <div class="container">
+        <div class="form-card">
+            <h3>Add New Category</h3>
+            <form method="POST" action="{{ url_for('admin.add_category') }}" class="inline-form">
+                <input type="text" name="name" class="form-control" placeholder="Category name" required>
+                <input type="text" name="description" class="form-control" placeholder="Description (optional)">
+                <input type="url" name="image_url" class="form-control" placeholder="Image URL (optional)">
+                <button type="submit" class="btn btn-primary"><i class="fas fa-plus"></i> Add</button>
+            </form>
+        </div>
+
+        <div class="categories-manage-grid">
+            {% for cat in categories %}
+            <div class="category-manage-card {% if not cat.is_active %}unavailable-card{% endif %}">
+                <div class="category-manage-icon">
+                    {% if cat.image_url %}
+                    <img src="{{ cat.image_url }}" alt="{{ cat.name }}" onerror="this.style.display='none'">
+                    {% else %}
+                    <i class="fas fa-tag"></i>
+                    {% endif %}
+                </div>
+                <div class="category-manage-info">
+                    <h4>{{ cat.name }}</h4>
+                    <small>{{ cat.description or '' }}</small>
+                </div>
+                <form method="POST" action="{{ url_for('admin.delete_category', cat_id=cat.id) }}"
+                      onsubmit="return confirm('Delete {{ cat.name }}?')">
+                    <button type="submit" class="btn btn-sm btn-danger">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </form>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+{% endblock %}

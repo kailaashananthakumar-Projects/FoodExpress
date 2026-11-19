@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}About — FoodExpress{% endblock %}
+{% block content %}
+<div class="page-header">
+    <div class="container"><h1>About FoodExpress</h1></div>
+</div>
+<section class="section">
+    <div class="container container-narrow">
+        <div class="about-card">
+            <h2>Food Delivery Management System</h2>
+            <p>A comprehensive food delivery platform built as a college project using Python, Flask, MySQL, HTML, CSS, and JavaScript.</p>
+            <h3>Features</h3>
+            <ul>
+                <li>Customer registration, login, and order tracking</li>
+                <li>Restaurant menu management</li>
+                <li>Delivery agent assignment and tracking</li>
+                <li>Admin dashboard with reports and charts</li>
+                <li>Automatic 10% discount on orders above ₹500</li>
+                <li>Real-time order status updates</li>
+            </ul>
+            <h3>Technology Stack</h3>
+            <ul>
+                <li>Backend: Python + Flask</li>
+                <li>Database: MySQL</li>
+                <li>Frontend: HTML5, CSS3, JavaScript</li>
+            </ul>
+            <a href="{{ url_for('index') }}" class="btn btn-primary">Back to Home</a>
+        </div>
+    </div>
+</section>
+{% endblock %}

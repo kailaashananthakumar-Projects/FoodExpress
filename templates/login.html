@@ -1,0 +1,132 @@
+{% extends "base.html" %}
+{% block title %}Login — FoodExpress{% endblock %}
+{% block content %}
+<div class="auth-page">
+    <div class="auth-container">
+        <div class="auth-image">
+            <div class="auth-image-overlay">
+                <h2>Welcome Back!</h2>
+                <p>Log in to order your favorite food and track deliveries in real time.</p>
+            </div>
+        </div>
+        <div class="auth-form-section">
+            <div class="auth-header">
+                <a href="{{ url_for('index') }}" class="auth-logo">
+                    <i class="fas fa-utensils"></i> FoodExpress
+                </a>
+                <h1>Sign In</h1>
+                <p>Don't have an account? <a href="{{ url_for('auth.register') }}">Register</a></p>
+            </div>
+
+            <form method="POST" action="{{ url_for('auth.login') }}" class="auth-form" id="loginForm">
+                <!-- Role Selector -->
+                <div class="role-selector">
+                    <label class="role-label">Login As:</label>
+                    <div class="role-tabs">
+                        <label class="role-tab {% if not request.form.get('role') or request.form.get('role')=='customer' %}active{% endif %}">
+                            <input type="radio" name="role" value="customer" {% if not request.form.get('role') or request.form.get('role')=='customer' %}checked{% endif %}>
+                            <i class="fas fa-user"></i> Customer
+                        </label>
+                        <label class="role-tab {% if request.form.get('role')=='restaurant' %}active{% endif %}">
+                            <input type="radio" name="role" value="restaurant" {% if request.form.get('role')=='restaurant' %}checked{% endif %}>
+                            <i class="fas fa-store"></i> Restaurant
+                        </label>
+                        <label class="role-tab {% if request.form.get('role')=='agent' %}active{% endif %}">
+                            <input type="radio" name="role" value="agent" {% if request.form.get('role')=='agent' %}checked{% endif %}>
+                            <i class="fas fa-motorcycle"></i> Agent
+                        </label>
+                        <label class="role-tab {% if request.form.get('role')=='admin' %}active{% endif %}">
+                            <input type="radio" name="role" value="admin" {% if request.form.get('role')=='admin' %}checked{% endif %}>
+                            <i class="fas fa-shield-alt"></i> Admin
+                        </label>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="email"><i class="fas fa-envelope"></i> Email Address</label>
+                    <input type="email" id="email" name="email" class="form-control"
+                           value="{{ request.form.get('email', '') }}"
+                           placeholder="Enter your email" required autofocus>
+                </div>
+
+                <div class="form-group">
+                    <label for="password"><i class="fas fa-lock"></i> Password</label>
+                    <div class="password-input-group">
+                        <input type="password" id="password" name="password" class="form-control"
+                               placeholder="Enter your password" required>
+                        <button type="button" class="password-toggle" onclick="togglePassword('password')">
+                            <i class="fas fa-eye" id="password-eye"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn btn-primary btn-full btn-lg">
+                    <i class="fas fa-sign-in-alt"></i> Sign In
+                </button>
+            </form>
+
+            <div class="auth-divider"><span>Demo Credentials</span></div>
+            <div class="demo-credentials">
+                <div class="demo-cred" onclick="fillCred('customer@demo.com','demo1234','customer')">
+                    <i class="fas fa-user"></i>
+                    <div>
+                        <strong>Customer</strong>
+                        <small>customer@demo.com / demo1234</small>
+                    </div>
+                </div>
+                <div class="demo-cred" onclick="fillCred('pizzapalace@demo.com','demo1234','restaurant')">
+                    <i class="fas fa-store"></i>
+                    <div>
+                        <strong>Restaurant</strong>
+                        <small>pizzapalace@demo.com / demo1234</small>
+                    </div>
+                </div>
+                <div class="demo-cred" onclick="fillCred('agent1@demo.com','demo1234','agent')">
+                    <i class="fas fa-motorcycle"></i>
+                    <div>
+                        <strong>Agent</strong>
+                        <small>agent1@demo.com / demo1234</small>
+                    </div>
+                </div>
+                <div class="demo-cred" onclick="fillCred('admin@foodexpress.com','admin1234','admin')">
+                    <i class="fas fa-shield-alt"></i>
+                    <div>
+                        <strong>Admin</strong>
+                        <small>admin@foodexpress.com / admin1234</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function fillCred(email, password, role) {
+    document.getElementById('email').value = email;
+    document.getElementById('password').value = password;
+    // Set the role radio
+    document.querySelectorAll('[name="role"]').forEach(r => {
+        r.checked = r.value === role;
+        r.closest('.role-tab').classList.toggle('active', r.value === role);
+    });
+}
+function togglePassword(id) {
+    const input = document.getElementById(id);
+    const eye = document.getElementById(id + '-eye');
+    if (input.type === 'password') {
+        input.type = 'text';
+        eye.classList.replace('fa-eye', 'fa-eye-slash');
+    } else {
+        input.type = 'password';
+        eye.classList.replace('fa-eye-slash', 'fa-eye');
+    }
+}
+// Role tab click highlight
+document.querySelectorAll('[name="role"]').forEach(radio => {
+    radio.addEventListener('change', function() {
+        document.querySelectorAll('.role-tab').forEach(t => t.classList.remove('active'));
+        this.closest('.role-tab').classList.add('active');
+    });
+});
+</script>
+{% endblock %}

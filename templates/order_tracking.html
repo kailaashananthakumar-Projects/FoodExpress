@@ -1,0 +1,189 @@
+{% extends "base.html" %}
+{% block title %}Order Tracking #{{ order.id }} — FoodExpress{% endblock %}
+{% block content %}
+<div class="page-header">
+    <div class="container">
+        <h1><i class="fas fa-map-marker-alt"></i> Track Order #{{ order.id }}</h1>
+        <p>from <strong>{{ order.restaurant_name }}</strong></p>
+    </div>
+</div>
+
+<section class="section">
+    <div class="container">
+        <div class="tracking-layout">
+            <!-- Tracking Timeline -->
+            <div class="tracking-card">
+                <h3>Order Status</h3>
+                {% set statuses = [
+                    ('pending', 'Order Placed', 'fa-clock', 'Your order has been placed'),
+                    ('confirmed', 'Order Confirmed', 'fa-check-circle', 'Restaurant accepted your order'),
+                    ('preparing', 'Preparing Food', 'fa-fire', 'Your food is being prepared'),
+                    ('ready_for_pickup', 'Ready for Pickup', 'fa-box', 'Food is packed and ready'),
+                    ('picked_up', 'Picked Up', 'fa-motorcycle', 'Agent picked up your order'),
+                    ('out_for_delivery', 'Out for Delivery', 'fa-road', 'Your order is on the way'),
+                    ('delivered', 'Delivered', 'fa-check-double', 'Order delivered successfully!'),
+                ] %}
+                {% set current_status = order.status %}
+                {% set status_order = ['pending','confirmed','preparing','ready_for_pickup','picked_up','out_for_delivery','delivered'] %}
+                {% set current_idx = status_order.index(current_status) if current_status in status_order else 0 %}
+
+                {% if current_status == 'cancelled' %}
+                <div class="tracking-cancelled">
+                    <i class="fas fa-times-circle"></i>
+                    <h3>Order Cancelled</h3>
+                    <p>This order has been cancelled.</p>
+                </div>
+                {% else %}
+                <div class="tracking-timeline">
+                    {% for s_key, s_label, s_icon, s_desc in statuses %}
+                    {% set s_idx = status_order.index(s_key) %}
+                    <div class="timeline-step {% if s_idx < current_idx %}completed{% elif s_idx == current_idx %}active{% endif %}">
+                        <div class="timeline-icon">
+                            <i class="fas {{ s_icon }}"></i>
+                        </div>
+                        <div class="timeline-content">
+                            <h4>{{ s_label }}</h4>
+                            <p>{{ s_desc }}</p>
+                            {% for t in tracking %}
+                                {% if t.status == s_key %}
+                                <small class="timeline-time">
+                                    <i class="fas fa-clock"></i>
+                                    {{ t.created_at.strftime('%d %b, %I:%M %p') if t.created_at else '' }}
+                                </small>
+                                {% endif %}
+                            {% endfor %}
+                        </div>
+                        {% if s_idx < loop.length - 1 %}
+                        <div class="timeline-line {% if s_idx < current_idx %}completed{% endif %}"></div>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+
+                <!-- Live Refresh -->
+                {% if order.status not in ('delivered', 'cancelled') %}
+                <div class="tracking-refresh">
+                    <small><i class="fas fa-sync-alt"></i> Auto-refreshes every 30 seconds</small>
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Order Details -->
+            <div class="tracking-details">
+                <div class="order-detail-card">
+                    <h3>Order Details</h3>
+                    <div class="detail-rows">
+                        <div class="detail-row">
+                            <span>Order ID</span><strong>#{{ order.id }}</strong>
+                        </div>
+                        <div class="detail-row">
+                            <span>Placed On</span>
+                            <strong>{{ order.created_at.strftime('%d %b %Y, %I:%M %p') if order.created_at else 'N/A' }}</strong>
+                        </div>
+                        <div class="detail-row">
+                            <span>Restaurant</span><strong>{{ order.restaurant_name }}</strong>
+                        </div>
+                        <div class="detail-row">
+                            <span>Status</span>
+                            <span class="order-status status-{{ order.status }}">
+                                {{ order.status.replace('_',' ').title() }}
+                            </span>
+                        </div>
+                        <div class="detail-row">
+                            <span>Payment</span>
+                            <span class="badge badge-{{ 'success' if order.payment_status == 'paid' else 'warning' }}">
+                                {{ order.payment_method.replace('_', ' ').title() }} — {{ order.payment_status.title() }}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Items -->
+                <div class="order-detail-card">
+                    <h3>Items Ordered</h3>
+                    {% for item in items %}
+                    <div class="order-item-row">
+                        {% if item.image_url %}
+                        <img src="{{ item.image_url }}" alt="{{ item.food_name }}" class="item-thumb"
+                             onerror="this.src='/static/images/food_placeholder.svg'">
+                        {% endif %}
+                        <span class="order-item-name">{{ item.food_name }}</span>
+                        <span class="order-item-qty">×{{ item.quantity }}</span>
+                        <span class="order-item-price">₹{{ "%.2f"|format(item.total_price) }}</span>
+                    </div>
+                    {% endfor %}
+                    <div class="order-totals">
+                        <div class="summary-row">
+                            <span>Subtotal</span><span>₹{{ "%.2f"|format(order.subtotal) }}</span>
+                        </div>
+                        {% if order.discount_amount > 0 %}
+                        <div class="summary-row text-green">
+                            <span>Discount</span><span>−₹{{ "%.2f"|format(order.discount_amount) }}</span>
+                        </div>
+                        {% endif %}
+                        <div class="summary-row">
+                            <span>Delivery Fee</span><span>₹{{ "%.2f"|format(order.delivery_fee) }}</span>
+                        </div>
+                        <div class="summary-row summary-total">
+                            <span>Total</span><span>₹{{ "%.2f"|format(order.total_amount) }}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Delivery Address -->
+                <div class="order-detail-card">
+                    <h3><i class="fas fa-map-marker-alt"></i> Delivery Address</h3>
+                    <p>{{ order.delivery_address }}</p>
+                </div>
+
+                <!-- Agent Info -->
+                {% if order.agent_name %}
+                <div class="order-detail-card">
+                    <h3><i class="fas fa-motorcycle"></i> Delivery Agent</h3>
+                    <p><strong>{{ order.agent_name }}</strong></p>
+                    {% if order.agent_phone %}
+                    <p><i class="fas fa-phone"></i> {{ order.agent_phone }}</p>
+                    {% endif %}
+                    {% if order.vehicle_number %}
+                    <p><i class="fas fa-motorcycle"></i> {{ order.vehicle_number }}</p>
+                    {% endif %}
+                </div>
+                {% endif %}
+
+                <!-- Actions -->
+                <div class="tracking-actions">
+                    {% if order.status == 'pending' %}
+                    <form method="POST" action="{{ url_for('customer.cancel_order', order_id=order.id) }}"
+                          onsubmit="return confirm('Cancel this order?')">
+                        <button type="submit" class="btn btn-danger btn-full">
+                            <i class="fas fa-times"></i> Cancel Order
+                        </button>
+                    </form>
+                    {% endif %}
+                    <a href="{{ url_for('customer.order_history') }}" class="btn btn-outline btn-full">
+                        <i class="fas fa-list"></i> All Orders
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+{% endblock %}
+{% block extra_js %}
+<script>
+{% if order.status not in ('delivered', 'cancelled') %}
+// Auto-refresh order status every 30 seconds
+setInterval(function() {
+    fetch('{{ url_for("customer.order_status_api", order_id=order.id) }}')
+    .then(r => r.json())
+    .then(data => {
+        if (data.status && data.status !== '{{ order.status }}') {
+            location.reload();
+        }
+    }).catch(() => {});
+}, 30000);
+{% endif %}
+</script>
+{% endblock %}

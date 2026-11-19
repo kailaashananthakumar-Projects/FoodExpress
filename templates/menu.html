@@ -1,0 +1,237 @@
+{% extends "base.html" %}
+{% block title %}{{ restaurant.name }} Menu — FoodExpress{% endblock %}
+{% block content %}
+
+<!-- Restaurant Header -->
+<div class="restaurant-hero">
+    <div class="restaurant-hero-overlay"></div>
+    <div class="container">
+        <div class="restaurant-hero-info">
+            <div class="restaurant-hero-img">
+                {% if restaurant.image_url %}
+                    <img src="{{ restaurant.image_url }}" alt="{{ restaurant.name }}" onerror="this.src='/static/images/restaurant_placeholder.svg'">
+                {% else %}
+                    <div class="restaurant-img-placeholder large"><i class="fas fa-store"></i></div>
+                {% endif %}
+            </div>
+            <div class="restaurant-hero-details">
+                <h1>{{ restaurant.name }}</h1>
+                <p>{{ restaurant.description or 'Delicious food made with love.' }}</p>
+                <div class="restaurant-meta large">
+                    <span><i class="fas fa-star text-orange"></i> {{ restaurant.rating or '4.0' }} Rating</span>
+                    <span><i class="fas fa-utensils"></i> {{ restaurant.cuisine_type or 'Multi-Cuisine' }}</span>
+                    <span><i class="fas fa-motorcycle"></i> ₹{{ restaurant.delivery_fee }} delivery</span>
+                    <span><i class="fas fa-clock"></i> 30-45 min</span>
+                    {% if restaurant.address %}
+                    <span><i class="fas fa-map-marker-alt"></i> {{ restaurant.address[:40] }}...</span>
+                    {% endif %}
+                </div>
+                {% if discount_threshold %}
+                <div class="discount-notice">
+                    <i class="fas fa-tag"></i>
+                    Get <strong>{{ discount_rate }}% OFF</strong> on orders above ₹{{ discount_threshold|int }}!
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<section class="section menu-section">
+    <div class="container">
+        <div class="menu-layout">
+            <!-- Left: Filters -->
+            <aside class="menu-sidebar">
+                <div class="menu-filter-card">
+                    <h4>Filter Menu</h4>
+                    <form method="GET" id="filterForm">
+                        <div class="form-group">
+                            <input type="text" name="search" value="{{ search }}"
+                                   class="form-control" placeholder="Search items..."
+                                   onchange="this.form.submit()">
+                        </div>
+                        {% if categories %}
+                        <div class="form-group">
+                            <label>Category</label>
+                            <div class="filter-chips">
+                                <a href="?{% if search %}search={{ search }}&{% endif %}"
+                                   class="chip {% if not selected_category %}chip-active{% endif %}">All</a>
+                                {% for cat in categories %}
+                                <a href="?category={{ cat.id }}{% if search %}&search={{ search }}{% endif %}"
+                                   class="chip {% if selected_category|string == cat.id|string %}chip-active{% endif %}">
+                                    {{ cat.name }}
+                                </a>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        {% endif %}
+                        <div class="form-group">
+                            <label class="toggle-label">
+                                <input type="checkbox" name="veg" value="1" {% if veg_only %}checked{% endif %}
+                                       onchange="this.form.submit()">
+                                <span class="toggle-switch"></span>
+                                <i class="fas fa-leaf text-green"></i> Veg Only
+                            </label>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Cart Summary (Sidebar) -->
+                <div class="cart-summary-sidebar" id="cartSidebar" style="display:none">
+                    <h4><i class="fas fa-shopping-cart"></i> Your Cart</h4>
+                    <div id="cartSidebarItems"></div>
+                    <div class="cart-sidebar-total">
+                        <span>Subtotal:</span>
+                        <strong id="cartSidebarSubtotal">₹0</strong>
+                    </div>
+                    <a href="{{ url_for('customer.cart') }}" class="btn btn-primary btn-full">
+                        View Cart & Checkout
+                    </a>
+                </div>
+            </aside>
+
+            <!-- Right: Menu Items -->
+            <div class="menu-content">
+                {% if food_items %}
+                <div class="menu-grid">
+                    {% for item in food_items %}
+                    <div class="food-card {% if not item.is_available %}food-card-unavailable{% endif %}">
+                        <div class="food-img">
+                            {% if item.image_url %}
+                                <img src="{{ item.image_url }}" alt="{{ item.name }}" loading="lazy"
+                                     onerror="this.src='/static/images/food_placeholder.svg'">
+                            {% else %}
+                                <div class="food-img-placeholder"><i class="fas fa-utensils"></i></div>
+                            {% endif %}
+                            {% if item.is_vegetarian %}
+                            <span class="veg-badge"><i class="fas fa-leaf"></i></span>
+                            {% endif %}
+                            {% if not item.is_available %}
+                            <div class="unavailable-overlay">Currently Unavailable</div>
+                            {% endif %}
+                        </div>
+                        <div class="food-info">
+                            <div class="food-header">
+                                <h3>{{ item.name }}</h3>
+                                {% if item.spice_level and item.spice_level != 'mild' %}
+                                <span class="spice-badge spice-{{ item.spice_level }}">
+                                    🌶️ {{ item.spice_level.replace('_', ' ').title() }}
+                                </span>
+                                {% endif %}
+                            </div>
+                            {% if item.category_name %}
+                            <span class="food-category">{{ item.category_name }}</span>
+                            {% endif %}
+                            <p class="food-desc">{{ item.description or '' }}</p>
+                            <div class="food-footer">
+                                <div class="food-price">₹{{ "%.2f"|format(item.price) }}</div>
+                                {% if item.preparation_time %}
+                                <span class="prep-time"><i class="fas fa-clock"></i> {{ item.preparation_time }} min</span>
+                                {% endif %}
+                                {% if item.is_available %}
+                                <div class="quantity-control" data-item-id="{{ item.id }}" data-restaurant-id="{{ restaurant.id }}" style="display:none">
+                                    <button class="qty-btn qty-minus" onclick="changeQty({{ item.id }}, -1)">−</button>
+                                    <span class="qty-display" id="qty-{{ item.id }}">1</span>
+                                    <button class="qty-btn qty-plus" onclick="changeQty({{ item.id }}, 1)">+</button>
+                                </div>
+                                <button class="btn btn-sm btn-add-cart"
+                                        onclick="addToCart({{ item.id }}, {{ restaurant.id }}, '{{ item.name|replace("'", "\\'") }}')"
+                                        id="addBtn-{{ item.id }}">
+                                    <i class="fas fa-plus"></i> Add
+                                </button>
+                                {% else %}
+                                <span class="btn btn-sm btn-disabled">Unavailable</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="empty-state">
+                    <i class="fas fa-utensils"></i>
+                    <h3>No items found</h3>
+                    <p>Try removing filters or search terms.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Floating Cart Button -->
+<div class="floating-cart" id="floatingCart" style="display:none">
+    <a href="{{ url_for('customer.cart') }}" class="floating-cart-btn">
+        <i class="fas fa-shopping-cart"></i>
+        <span id="floatingCartCount">0</span> items — View Cart
+        <strong id="floatingCartTotal">₹0</strong>
+    </a>
+</div>
+
+{% endblock %}
+{% block extra_js %}
+<script>
+const restaurantId = {{ restaurant.id }};
+let cartQtys = {};
+
+function changeQty(itemId, delta) {
+    const qtyEl = document.getElementById('qty-' + itemId);
+    let qty = parseInt(qtyEl.textContent) + delta;
+    if (qty < 1) qty = 1;
+    if (qty > 10) qty = 10;
+    qtyEl.textContent = qty;
+}
+
+function addToCart(itemId, restaurantId, itemName) {
+    {% if not session.get('user_id') %}
+    window.location.href = '{{ url_for("auth.login") }}';
+    return;
+    {% endif %}
+
+    const qtyEl = document.getElementById('qty-' + itemId);
+    const qty = qtyEl ? parseInt(qtyEl.textContent) : 1;
+    const btn = document.getElementById('addBtn-' + itemId);
+
+    fetch('{{ url_for("customer.add_to_cart") }}', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({food_item_id: itemId, restaurant_id: restaurantId, quantity: qty})
+    }).then(r => r.json()).then(data => {
+        if (data.success) {
+            cartQtys[itemId] = (cartQtys[itemId] || 0) + qty;
+            showFloatingCart(data.cart_count);
+            showToast(data.message, 'success');
+            // Update nav cart count
+            const navCount = document.getElementById('navCartCount');
+            if (navCount) navCount.textContent = data.cart_count;
+        } else if (data.cart_conflict) {
+            if (confirm('Your cart has items from another restaurant. Clear cart and add this item?')) {
+                clearCartAndAdd(itemId, restaurantId, qty);
+            }
+        } else {
+            showToast(data.message, 'error');
+        }
+    });
+}
+
+function clearCartAndAdd(itemId, restaurantId, qty) {
+    fetch('{{ url_for("customer.clear_cart") }}', {method:'POST'})
+    .then(() => addToCart(itemId, restaurantId, ''));
+}
+
+function showFloatingCart(count) {
+    const fc = document.getElementById('floatingCart');
+    document.getElementById('floatingCartCount').textContent = count;
+    fc.style.display = 'block';
+}
+
+function showToast(msg, type) {
+    const toast = document.createElement('div');
+    toast.className = 'toast toast-' + type;
+    toast.innerHTML = `<i class="fas ${type==='success'?'fa-check-circle':'fa-exclamation-circle'}"></i> ${msg}`;
+    document.body.appendChild(toast);
+    setTimeout(() => toast.classList.add('show'), 10);
+    setTimeout(() => { toast.classList.remove('show'); setTimeout(() => toast.remove(), 300); }, 3000);
+}
+</script>
+{% endblock %}

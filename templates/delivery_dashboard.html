@@ -1,0 +1,115 @@
+{% extends "base.html" %}
+{% block title %}Delivery Dashboard — FoodExpress{% endblock %}
+{% block content %}
+<div class="dashboard-page">
+    <div class="dashboard-header delivery-header">
+        <div class="container">
+            <div class="dashboard-welcome">
+                <div class="dashboard-avatar delivery-avatar"><i class="fas fa-motorcycle"></i></div>
+                <div>
+                    <h1>{{ agent.name }}</h1>
+                    <p>Delivery Agent | {{ agent.vehicle_type.title() }} {{ '— ' + agent.vehicle_number if agent.vehicle_number else '' }}</p>
+                    <span class="availability-badge {% if agent.is_available %}badge-success{% else %}badge-warning{% endif %}">
+                        {{ 'Available' if agent.is_available else 'On Delivery' }}
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon green"><i class="fas fa-check-double"></i></div>
+                <div class="stat-info">
+                    <h3>{{ stats.total_delivered or 0 }}</h3>
+                    <p>Total Delivered</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon orange"><i class="fas fa-calendar-day"></i></div>
+                <div class="stat-info">
+                    <h3>{{ today_completed.cnt or 0 }}</h3>
+                    <p>Today's Deliveries</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon blue"><i class="fas fa-motorcycle"></i></div>
+                <div class="stat-info">
+                    <h3>{{ active_deliveries|length }}</h3>
+                    <p>Active Deliveries</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Active Deliveries -->
+        <div class="dashboard-card">
+            <h3>Active Deliveries <span class="badge badge-danger">{{ active_deliveries|length }}</span></h3>
+            {% if active_deliveries %}
+            {% for delivery in active_deliveries %}
+            <div class="delivery-card">
+                <div class="delivery-card-header">
+                    <h4>Order #{{ delivery.id }}</h4>
+                    <span class="order-status status-{{ delivery.status }}">{{ delivery.status.replace('_',' ').title() }}</span>
+                </div>
+                <div class="delivery-info-grid">
+                    <div class="delivery-info-item">
+                        <i class="fas fa-store"></i>
+                        <div>
+                            <strong>{{ delivery.restaurant_name }}</strong>
+                            <small>{{ delivery.restaurant_address or 'Address not set' }}</small>
+                        </div>
+                    </div>
+                    <div class="delivery-info-item">
+                        <i class="fas fa-user"></i>
+                        <div>
+                            <strong>{{ delivery.customer_name }}</strong>
+                            <small>{{ delivery.customer_phone or '' }}</small>
+                        </div>
+                    </div>
+                    <div class="delivery-info-item">
+                        <i class="fas fa-map-marker-alt"></i>
+                        <div>
+                            <strong>Delivery To</strong>
+                            <small>{{ delivery.delivery_address }}</small>
+                        </div>
+                    </div>
+                </div>
+                <!-- Update Status -->
+                {% set next_map = {
+                    'ready_for_pickup': [('picked_up', 'Mark as Picked Up', 'btn-warning')],
+                    'picked_up': [('out_for_delivery', 'Out for Delivery', 'btn-info')],
+                    'out_for_delivery': [('delivered', 'Mark as Delivered', 'btn-success')],
+                } %}
+                {% if next_map.get(delivery.status) %}
+                <div class="delivery-actions">
+                    {% for next_s, label, cls in next_map.get(delivery.status, []) %}
+                    <form method="POST" action="{{ url_for('delivery.update_delivery_status', order_id=delivery.id) }}"
+                          onsubmit="return confirm('{{ label }}?')">
+                        <input type="hidden" name="status" value="{{ next_s }}">
+                        <button type="submit" class="btn {{ cls }} btn-full">
+                            <i class="fas fa-check"></i> {{ label }}
+                        </button>
+                    </form>
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </div>
+            {% endfor %}
+            {% else %}
+            <div class="empty-state small">
+                <i class="fas fa-check-circle text-green"></i>
+                <h3>No active deliveries</h3>
+                <p>You'll see assigned deliveries here.</p>
+            </div>
+            {% endif %}
+        </div>
+
+        <div class="text-center mt-3">
+            <a href="{{ url_for('delivery.deliveries') }}" class="btn btn-outline">
+                <i class="fas fa-history"></i> View All Delivery History
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

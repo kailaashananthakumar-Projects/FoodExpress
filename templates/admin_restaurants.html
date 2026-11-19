@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block title %}Manage Restaurants — Admin{% endblock %}
+{% block content %}
+<div class="page-header">
+    <div class="container">
+        <div class="admin-nav-pills">
+            <a href="{{ url_for('admin.dashboard') }}" class="pill">Dashboard</a>
+            <a href="{{ url_for('admin.customers') }}" class="pill">Customers</a>
+            <a href="{{ url_for('admin.restaurants') }}" class="pill active">Restaurants</a>
+            <a href="{{ url_for('admin.agents') }}" class="pill">Agents</a>
+            <a href="{{ url_for('admin.orders') }}" class="pill">Orders</a>
+            <a href="{{ url_for('admin.reports') }}" class="pill">Reports</a>
+        </div>
+        <div class="page-header-row">
+            <h1><i class="fas fa-store"></i> Restaurants ({{ restaurants|length }})</h1>
+            <a href="{{ url_for('admin.add_restaurant') }}" class="btn btn-primary">
+                <i class="fas fa-plus"></i> Add Restaurant
+            </a>
+        </div>
+    </div>
+</div>
+<section class="section">
+    <div class="container">
+        <div class="table-responsive">
+            <table class="data-table">
+                <thead>
+                    <tr><th>#</th><th>Name</th><th>Email</th><th>Cuisine</th><th>Rating</th><th>Delivery Fee</th><th>Status</th><th>Actions</th></tr>
+                </thead>
+                <tbody>
+                    {% for r in restaurants %}
+                    <tr class="{% if not r.is_active %}row-inactive{% endif %}">
+                        <td>{{ r.id }}</td>
+                        <td>{{ r.name }}</td>
+                        <td>{{ r.email }}</td>
+                        <td>{{ r.cuisine_type or '—' }}</td>
+                        <td>⭐ {{ r.rating }}</td>
+                        <td>₹{{ r.delivery_fee }}</td>
+                        <td><span class="badge badge-{{ 'success' if r.is_active else 'danger' }}">{{ 'Active' if r.is_active else 'Inactive' }}</span></td>
+                        <td>
+                            <form method="POST" action="{{ url_for('admin.toggle_restaurant', restaurant_id=r.id) }}" style="display:inline">
+                                <button type="submit" class="btn btn-sm btn-{{ 'danger' if r.is_active else 'success' }}">
+                                    {{ 'Disable' if r.is_active else 'Enable' }}
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</section>
+{% endblock %}

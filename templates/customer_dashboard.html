@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+{% block title %}My Dashboard — FoodExpress{% endblock %}
+{% block content %}
+<div class="dashboard-page">
+    <div class="dashboard-header">
+        <div class="container">
+            <div class="dashboard-welcome">
+                <div class="dashboard-avatar">
+                    <i class="fas fa-user-circle"></i>
+                </div>
+                <div>
+                    <h1>Hello, {{ customer.name }}! 👋</h1>
+                    <p>{{ customer.email }} | Member since {{ customer.created_at.strftime('%B %Y') if customer.created_at else 'N/A' }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <!-- Stats Cards -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon orange"><i class="fas fa-shopping-bag"></i></div>
+                <div class="stat-info">
+                    <h3>{{ stats.total or 0 }}</h3>
+                    <p>Total Orders</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon green"><i class="fas fa-rupee-sign"></i></div>
+                <div class="stat-info">
+                    <h3>₹{{ "%.0f"|format(stats.spent or 0) }}</h3>
+                    <p>Total Spent</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon blue"><i class="fas fa-map-marker-alt"></i></div>
+                <div class="stat-info">
+                    <h3>{{ customer.address[:25] + '...' if customer.address and customer.address|length > 25 else (customer.address or 'Not set') }}</h3>
+                    <p>Default Address</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="dashboard-grid">
+            <!-- Quick Actions -->
+            <div class="dashboard-card quick-actions-card">
+                <h3>Quick Actions</h3>
+                <div class="quick-actions">
+                    <a href="{{ url_for('customer.restaurants') }}" class="quick-action-btn">
+                        <i class="fas fa-search"></i>
+                        <span>Browse Restaurants</span>
+                    </a>
+                    <a href="{{ url_for('customer.cart') }}" class="quick-action-btn">
+                        <i class="fas fa-shopping-cart"></i>
+                        <span>View Cart</span>
+                    </a>
+                    <a href="{{ url_for('customer.order_history') }}" class="quick-action-btn">
+                        <i class="fas fa-history"></i>
+                        <span>My Orders</span>
+                    </a>
+                </div>
+            </div>
+
+            <!-- Recent Orders -->
+            <div class="dashboard-card">
+                <div class="card-header-row">
+                    <h3>Recent Orders</h3>
+                    <a href="{{ url_for('customer.order_history') }}" class="btn btn-sm btn-outline">View All</a>
+                </div>
+                {% if recent_orders %}
+                <div class="order-list">
+                    {% for order in recent_orders %}
+                    <div class="order-item">
+                        <div class="order-item-info">
+                            <strong>#{{ order.id }} — {{ order.restaurant_name }}</strong>
+                            <small>{{ order.created_at.strftime('%d %b %Y, %I:%M %p') if order.created_at else '' }}</small>
+                        </div>
+                        <div class="order-item-right">
+                            <span class="order-status status-{{ order.status }}">{{ order.status.replace('_', ' ').title() }}</span>
+                            <span class="order-amount">₹{{ "%.2f"|format(order.total_amount) }}</span>
+                            <a href="{{ url_for('customer.order_tracking', order_id=order.id) }}"
+                               class="btn btn-sm btn-outline">Track</a>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="empty-state small">
+                    <i class="fas fa-shopping-bag"></i>
+                    <p>No orders yet. <a href="{{ url_for('customer.restaurants') }}">Order your first meal!</a></p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

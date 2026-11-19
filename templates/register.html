@@ -1,0 +1,220 @@
+{% extends "base.html" %}
+{% block title %}Register — FoodExpress{% endblock %}
+{% block content %}
+<div class="auth-page">
+    <div class="auth-container">
+        <div class="auth-image auth-image-register">
+            <div class="auth-image-overlay">
+                <h2>Join FoodExpress!</h2>
+                <p>Create an account and start ordering from your favorite restaurants.</p>
+                <ul class="auth-benefits">
+                    <li><i class="fas fa-check"></i> Free registration</li>
+                    <li><i class="fas fa-check"></i> 10% discount on orders above ₹500</li>
+                    <li><i class="fas fa-check"></i> Real-time order tracking</li>
+                    <li><i class="fas fa-check"></i> Multiple payment options</li>
+                </ul>
+            </div>
+        </div>
+        <div class="auth-form-section">
+            <div class="auth-header">
+                <a href="{{ url_for('index') }}" class="auth-logo">
+                    <i class="fas fa-utensils"></i> FoodExpress
+                </a>
+                <h1>Create Account</h1>
+                <p>Already have an account? <a href="{{ url_for('auth.login') }}">Sign In</a></p>
+            </div>
+
+            <form method="POST" action="{{ url_for('auth.register') }}" class="auth-form" id="registerForm">
+                <div class="role-selector">
+                    <label class="role-label">Sign up as:</label>
+                    {% set sel = form_data.get('role', 'customer') %}
+                    <div class="role-tabs">
+                        <label class="role-tab {{ 'active' if sel == 'customer' }}">
+                            <input type="radio" name="role" value="customer" {{ 'checked' if sel == 'customer' }}>
+                            <i class="fas fa-user"></i> Customer
+                        </label>
+                        <label class="role-tab {{ 'active' if sel == 'restaurant' }}">
+                            <input type="radio" name="role" value="restaurant" {{ 'checked' if sel == 'restaurant' }}>
+                            <i class="fas fa-store"></i> Restaurant
+                        </label>
+                        <label class="role-tab {{ 'active' if sel == 'agent' }}">
+                            <input type="radio" name="role" value="agent" {{ 'checked' if sel == 'agent' }}>
+                            <i class="fas fa-motorcycle"></i> Agent
+                        </label>
+                        <label class="role-tab {{ 'active' if sel == 'admin' }}">
+                            <input type="radio" name="role" value="admin" {{ 'checked' if sel == 'admin' }}>
+                            <i class="fas fa-shield-alt"></i> Admin
+                        </label>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="name"><i class="fas fa-user"></i> <span id="nameLabel">Full Name</span></label>
+                        <input type="text" id="name" name="name" class="form-control"
+                               value="{{ form_data.get('name', '') }}" placeholder="Your full name" required>
+                    </div>
+                    <div class="form-group role-fields" data-roles="customer restaurant agent">
+                        <label for="phone"><i class="fas fa-phone"></i> Phone Number</label>
+                        <input type="tel" id="phone" name="phone" class="form-control"
+                               value="{{ form_data.get('phone', '') }}" placeholder="9876543210">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="email"><i class="fas fa-envelope"></i> Email Address</label>
+                    <input type="email" id="email" name="email" class="form-control"
+                           value="{{ form_data.get('email', '') }}" placeholder="your@email.com" required>
+                </div>
+
+                <!-- Customer & restaurant: address -->
+                <div class="form-group role-fields" data-roles="customer restaurant">
+                    <label for="address"><i class="fas fa-map-marker-alt"></i> <span id="addressLabel">Default Delivery Address</span></label>
+                    <textarea id="address" name="address" class="form-control" rows="2"
+                              placeholder="Street, area, city">{{ form_data.get('address', '') }}</textarea>
+                </div>
+
+                <!-- Restaurant only -->
+                <div class="form-row role-fields" data-roles="restaurant">
+                    <div class="form-group">
+                        <label for="cuisine_type"><i class="fas fa-utensils"></i> Cuisine Type</label>
+                        <input type="text" id="cuisine_type" name="cuisine_type" class="form-control"
+                               value="{{ form_data.get('cuisine_type', '') }}" placeholder="e.g. South Indian">
+                    </div>
+                    <div class="form-group">
+                        <label for="description"><i class="fas fa-info-circle"></i> Short Description</label>
+                        <input type="text" id="description" name="description" class="form-control"
+                               value="{{ form_data.get('description', '') }}" placeholder="What do you serve?">
+                    </div>
+                </div>
+
+                <!-- Agent only -->
+                <div class="form-row role-fields" data-roles="agent">
+                    <div class="form-group">
+                        <label for="vehicle_type"><i class="fas fa-motorcycle"></i> Vehicle Type</label>
+                        <select id="vehicle_type" name="vehicle_type" class="form-control">
+                            {% for v in ['bike', 'scooter', 'bicycle', 'car'] %}
+                            <option value="{{ v }}" {{ 'selected' if form_data.get('vehicle_type') == v }}>{{ v|capitalize }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="vehicle_number"><i class="fas fa-id-card"></i> Vehicle Number</label>
+                        <input type="text" id="vehicle_number" name="vehicle_number" class="form-control"
+                               value="{{ form_data.get('vehicle_number', '') }}" placeholder="TN01AB1234">
+                    </div>
+                </div>
+
+                <!-- Admin only -->
+                <div class="form-group role-fields" data-roles="admin">
+                    <label for="admin_code"><i class="fas fa-key"></i> Admin Code</label>
+                    <input type="password" id="admin_code" name="admin_code" class="form-control"
+                           placeholder="Secret code given by the system owner">
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="password"><i class="fas fa-lock"></i> Password</label>
+                        <div class="password-input-group">
+                            <input type="password" id="password" name="password" class="form-control"
+                                   placeholder="Min 6 characters" required minlength="6">
+                            <button type="button" class="password-toggle" onclick="togglePassword('password')">
+                                <i class="fas fa-eye" id="password-eye"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="confirm_password"><i class="fas fa-lock"></i> Confirm Password</label>
+                        <div class="password-input-group">
+                            <input type="password" id="confirm_password" name="confirm_password" class="form-control"
+                                   placeholder="Repeat password" required>
+                            <button type="button" class="password-toggle" onclick="togglePassword('confirm_password')">
+                                <i class="fas fa-eye" id="confirm_password-eye"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="passwordStrength" class="password-strength" style="display:none">
+                    <div class="strength-bar"><div class="strength-fill" id="strengthFill"></div></div>
+                    <span id="strengthText"></span>
+                </div>
+
+                <button type="submit" class="btn btn-primary btn-full btn-lg" id="registerBtn">
+                    <i class="fas fa-user-plus"></i> Create Account
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+function togglePassword(id) {
+    const input = document.getElementById(id);
+    const eye = document.getElementById(id + '-eye');
+    if (input.type === 'password') {
+        input.type = 'text';
+        eye.classList.replace('fa-eye', 'fa-eye-slash');
+    } else {
+        input.type = 'password';
+        eye.classList.replace('fa-eye-slash', 'fa-eye');
+    }
+}
+
+document.getElementById('password').addEventListener('input', function() {
+    const pwd = this.value;
+    const strengthDiv = document.getElementById('passwordStrength');
+    const fill = document.getElementById('strengthFill');
+    const text = document.getElementById('strengthText');
+    if (!pwd) { strengthDiv.style.display='none'; return; }
+    strengthDiv.style.display = 'block';
+    let score = 0;
+    if (pwd.length >= 6) score++;
+    if (pwd.length >= 8) score++;
+    if (/[A-Z]/.test(pwd)) score++;
+    if (/[0-9]/.test(pwd)) score++;
+    if (/[^A-Za-z0-9]/.test(pwd)) score++;
+    const levels = [
+        {w:'20%', color:'#e74c3c', label:'Weak'},
+        {w:'40%', color:'#e67e22', label:'Fair'},
+        {w:'60%', color:'#f39c12', label:'Good'},
+        {w:'80%', color:'#27ae60', label:'Strong'},
+        {w:'100%', color:'#2ecc71', label:'Very Strong'},
+    ];
+    const level = levels[Math.min(score, 4)];
+    fill.style.width = level.w;
+    fill.style.backgroundColor = level.color;
+    text.textContent = level.label;
+    text.style.color = level.color;
+});
+
+document.getElementById('registerForm').addEventListener('submit', function(e) {
+    const p = document.getElementById('password').value;
+    const cp = document.getElementById('confirm_password').value;
+    if (p !== cp) {
+        e.preventDefault();
+        alert('Passwords do not match!');
+    }
+});
+
+// Show only the fields that belong to the chosen role
+function applyRole() {
+    const role = document.querySelector('[name="role"]:checked').value;
+    document.querySelectorAll('.role-tab').forEach(t => t.classList.remove('active'));
+    document.querySelector('[name="role"]:checked').closest('.role-tab').classList.add('active');
+    document.querySelectorAll('.role-fields').forEach(el => {
+        const show = el.dataset.roles.split(' ').includes(role);
+        el.style.display = show ? '' : 'none';
+        el.querySelectorAll('input,textarea,select').forEach(i => i.disabled = !show);
+    });
+    document.getElementById('nameLabel').textContent = role === 'restaurant' ? 'Restaurant Name' : 'Full Name';
+    document.getElementById('addressLabel').textContent = role === 'restaurant' ? 'Restaurant Address' : 'Default Delivery Address';
+    document.getElementById('phone').required = role === 'restaurant' || role === 'agent';
+    document.getElementById('admin_code').required = role === 'admin';
+    document.getElementById('address').required = role === 'restaurant';
+    document.getElementById('vehicle_number').required = role === 'agent';
+}
+document.querySelectorAll('[name="role"]').forEach(r => r.addEventListener('change', applyRole));
+applyRole();
+</script>
+{% endblock %}

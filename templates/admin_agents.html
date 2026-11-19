@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block title %}Manage Agents — Admin{% endblock %}
+{% block content %}
+<div class="page-header">
+    <div class="container">
+        <div class="admin-nav-pills">
+            <a href="{{ url_for('admin.dashboard') }}" class="pill">Dashboard</a>
+            <a href="{{ url_for('admin.customers') }}" class="pill">Customers</a>
+            <a href="{{ url_for('admin.restaurants') }}" class="pill">Restaurants</a>
+            <a href="{{ url_for('admin.agents') }}" class="pill active">Agents</a>
+            <a href="{{ url_for('admin.orders') }}" class="pill">Orders</a>
+            <a href="{{ url_for('admin.reports') }}" class="pill">Reports</a>
+        </div>
+        <div class="page-header-row">
+            <h1><i class="fas fa-motorcycle"></i> Delivery Agents ({{ agents|length }})</h1>
+            <a href="{{ url_for('admin.add_agent') }}" class="btn btn-primary">
+                <i class="fas fa-plus"></i> Add Agent
+            </a>
+        </div>
+    </div>
+</div>
+<section class="section">
+    <div class="container">
+        <div class="table-responsive">
+            <table class="data-table">
+                <thead>
+                    <tr><th>#</th><th>Name</th><th>Email</th><th>Phone</th><th>Vehicle</th><th>Deliveries</th><th>Availability</th><th>Status</th><th>Actions</th></tr>
+                </thead>
+                <tbody>
+                    {% for a in agents %}
+                    <tr class="{% if not a.is_active %}row-inactive{% endif %}">
+                        <td>{{ a.id }}</td>
+                        <td>{{ a.name }}</td>
+                        <td>{{ a.email }}</td>
+                        <td>{{ a.phone }}</td>
+                        <td>{{ a.vehicle_type.title() }} {{ '— '+a.vehicle_number if a.vehicle_number else '' }}</td>
+                        <td>{{ a.total_deliveries }}</td>
+                        <td><span class="badge badge-{{ 'success' if a.is_available else 'warning' }}">{{ 'Available' if a.is_available else 'On Delivery' }}</span></td>
+                        <td><span class="badge badge-{{ 'success' if a.is_active else 'danger' }}">{{ 'Active' if a.is_active else 'Inactive' }}</span></td>
+                        <td>
+                            <form method="POST" action="{{ url_for('admin.toggle_agent', agent_id=a.id) }}" style="display:inline">
+                                <button type="submit" class="btn btn-sm btn-{{ 'danger' if a.is_active else 'success' }}">
+                                    {{ 'Disable' if a.is_active else 'Enable' }}
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</section>
+{% endblock %}

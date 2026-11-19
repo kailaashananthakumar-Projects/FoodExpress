@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+{% block title %}Orders — Restaurant Dashboard{% endblock %}
+{% block content %}
+<div class="page-header">
+    <div class="container">
+        <h1><i class="fas fa-list-alt"></i> Manage Orders</h1>
+    </div>
+</div>
+<section class="section">
+    <div class="container">
+        <!-- Status Filters -->
+        <div class="status-tabs">
+            <a href="?" class="status-tab {% if not status_filter %}active{% endif %}">All</a>
+            {% for s in ['pending','confirmed','preparing','ready_for_pickup','delivered','cancelled'] %}
+            <a href="?status={{ s }}" class="status-tab {% if status_filter == s %}active{% endif %}">
+                {{ s.replace('_',' ').title() }}
+            </a>
+            {% endfor %}
+        </div>
+
+        {% if orders %}
+        <div class="orders-list">
+            {% for order in orders %}
+            <div class="order-card restaurant-order-card">
+                <div class="order-card-header">
+                    <div>
+                        <h3>Order #{{ order.id }}</h3>
+                        <small>{{ order.customer_name }} | {{ order.customer_phone or '' }}</small>
+                        <small>{{ order.created_at.strftime('%d %b %Y, %I:%M %p') if order.created_at else '' }}</small>
+                    </div>
+                    <div class="order-card-right">
+                        <span class="order-status status-{{ order.status }}">{{ order.status.replace('_',' ').title() }}</span>
+                        <strong>₹{{ "%.2f"|format(order.total_amount) }}</strong>
+                    </div>
+                </div>
+
+                <!-- Items -->
+                <div class="order-items-list">
+                    {% for item in order.order_items %}
+                    <span class="order-item-chip">{{ item.food_name }} ×{{ item.quantity }}</span>
+                    {% endfor %}
+                </div>
+
+                <p class="delivery-address"><i class="fas fa-map-marker-alt"></i> {{ order.delivery_address }}</p>
+                {% if order.special_instructions %}
+                <p class="special-note"><i class="fas fa-comment"></i> {{ order.special_instructions }}</p>
+                {% endif %}
+
+                <!-- Update Status -->
+                {% if order.status not in ('delivered', 'cancelled') %}
+                <div class="order-update-form">
+                    <form method="POST" action="{{ url_for('restaurant.update_order', order_id=order.id) }}">
+                        <select name="status" class="form-control status-select">
+                            {% set next_map = {
+                                'pending': [('confirmed','Confirm Order'), ('cancelled','Cancel')],
+                                'confirmed': [('preparing','Start Preparing'), ('cancelled','Cancel')],
+                                'preparing': [('ready_for_pickup','Ready for Pickup')],
+                                'ready_for_pickup': [],
+                            } %}
+                            {% for val, label in next_map.get(order.status, []) %}
+                            <option value="{{ val }}">{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                        <input type="text" name="notes" class="form-control" placeholder="Notes (optional)">
+                        {% if next_map.get(order.status) %}
+                        <button type="submit" class="btn btn-primary btn-sm">Update</button>
+                        {% endif %}
+                    </form>
+                </div>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <i class="fas fa-clipboard-list"></i>
+            <h3>No orders found</h3>
+        </div>
+        {% endif %}
+    </div>
+</section>
+{% endblock %}

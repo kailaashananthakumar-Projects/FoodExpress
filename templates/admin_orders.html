@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+{% block title %}Manage Orders — Admin{% endblock %}
+{% block content %}
+<div class="page-header">
+    <div class="container">
+        <div class="admin-nav-pills">
+            <a href="{{ url_for('admin.dashboard') }}" class="pill">Dashboard</a>
+            <a href="{{ url_for('admin.customers') }}" class="pill">Customers</a>
+            <a href="{{ url_for('admin.restaurants') }}" class="pill">Restaurants</a>
+            <a href="{{ url_for('admin.agents') }}" class="pill">Agents</a>
+            <a href="{{ url_for('admin.orders') }}" class="pill active">Orders</a>
+            <a href="{{ url_for('admin.reports') }}" class="pill">Reports</a>
+        </div>
+        <h1><i class="fas fa-list-alt"></i> All Orders ({{ orders|length }})</h1>
+    </div>
+</div>
+<section class="section">
+    <div class="container">
+        <div class="status-tabs">
+            <a href="?" class="status-tab {% if not status_filter %}active{% endif %}">All</a>
+            {% for s in ['pending','confirmed','preparing','ready_for_pickup','picked_up','out_for_delivery','delivered','cancelled'] %}
+            <a href="?status={{ s }}" class="status-tab {% if status_filter==s %}active{% endif %}">
+                {{ s.replace('_',' ').title() }}
+            </a>
+            {% endfor %}
+        </div>
+        <div class="table-responsive">
+            <table class="data-table">
+                <thead>
+                    <tr><th>#</th><th>Customer</th><th>Restaurant</th><th>Agent</th><th>Total</th><th>Status</th><th>Payment</th><th>Date</th><th>Action</th></tr>
+                </thead>
+                <tbody>
+                    {% for order in orders %}
+                    <tr>
+                        <td>#{{ order.id }}</td>
+                        <td>{{ order.customer_name }}</td>
+                        <td>{{ order.restaurant_name }}</td>
+                        <td>
+                            {% if order.status in ('confirmed','preparing','ready_for_pickup') %}
+                            <form method="POST" action="{{ url_for('admin.assign_agent', order_id=order.id) }}" style="display:inline">
+                                <input type="hidden" name="next" value="{{ request.full_path.rstrip('?') }}">
+                                <select name="agent_id" class="form-control form-control-sm" onchange="if(this.value) this.form.submit()">
+                                    <option value="">{{ (order.agent_name ~ ' (change)') if order.agent_name else 'Assign agent...' }}</option>
+                                    {% for a in available_agents %}<option value="{{ a.id }}">{{ a.name }}</option>{% endfor %}
+                                </select>
+                            </form>
+                            {% else %}{{ order.agent_name or '—' }}{% endif %}
+                        </td>
+                        <td>₹{{ "%.2f"|format(order.total_amount) }}</td>
+                        <td><span class="order-status status-{{ order.status }}">{{ order.status.replace('_',' ').title() }}</span></td>
+                        <td><span class="badge badge-{{ 'success' if order.payment_status=='paid' else 'warning' }}">{{ order.payment_status.title() }}</span></td>
+                        <td>{{ order.created_at.strftime('%d/%m %H:%M') if order.created_at else '' }}</td>
+                        <td>
+                            {% if order.status not in ('delivered','cancelled') %}
+                            <form method="POST" action="{{ url_for('admin.update_order', order_id=order.id) }}" style="display:inline">
+                                <select name="status" class="form-control form-control-sm" onchange="this.form.submit()">
+                                    <option value="">Update...</option>
+                                    {% for s in ['confirmed','preparing','ready_for_pickup','picked_up','out_for_delivery','delivered','cancelled'] %}
+                                    <option value="{{ s }}">→ {{ s.replace('_',' ').title() }}</option>
+                                    {% endfor %}
+                                </select>
+                            </form>
+                            {% else %}
+                            <span class="text-muted">—</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</section>
+{% endblock %}

@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+{% block title %}Restaurants — FoodExpress{% endblock %}
+{% block content %}
+<div class="page-header">
+    <div class="container">
+        <h1><i class="fas fa-store"></i> All Restaurants</h1>
+        <p>{{ restaurants|length }} restaurant{{ 's' if restaurants|length != 1 else '' }} available</p>
+    </div>
+</div>
+
+<section class="section">
+    <div class="container">
+        <!-- Search & Filter -->
+        <div class="search-filter-bar">
+            <form method="GET" action="{{ url_for('customer.restaurants') }}" class="search-form">
+                <div class="search-input-wrap">
+                    <i class="fas fa-search"></i>
+                    <input type="text" name="search" value="{{ search }}"
+                           placeholder="Search restaurants, cuisine..." class="search-input">
+                </div>
+                <select name="cuisine" class="form-control filter-select">
+                    <option value="">All Cuisines</option>
+                    {% for c in cuisines %}
+                    <option value="{{ c }}" {% if selected_cuisine == c %}selected{% endif %}>{{ c }}</option>
+                    {% endfor %}
+                </select>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-filter"></i> Filter
+                </button>
+                {% if search or selected_cuisine %}
+                <a href="{{ url_for('customer.restaurants') }}" class="btn btn-outline">
+                    <i class="fas fa-times"></i> Clear
+                </a>
+                {% endif %}
+            </form>
+        </div>
+
+        <!-- Category Chips -->
+        {% if categories %}
+        <div class="category-chips">
+            <a href="{{ url_for('customer.restaurants') }}" class="chip {% if not selected_cuisine %}chip-active{% endif %}">All</a>
+            {% for cat in categories %}
+            <a href="{{ url_for('customer.restaurants', cuisine=cat.name) }}"
+               class="chip {% if selected_cuisine == cat.name %}chip-active{% endif %}">
+                {{ cat.name }}
+            </a>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <!-- Restaurant Grid -->
+        {% if restaurants %}
+        <div class="restaurants-grid">
+            {% for r in restaurants %}
+            <a href="{{ url_for('customer.menu', restaurant_id=r.id) }}" class="restaurant-card">
+                <div class="restaurant-img">
+                    {% if r.image_url %}
+                        <img src="{{ r.image_url }}" alt="{{ r.name }}" onerror="this.src='/static/images/restaurant_placeholder.svg'">
+                    {% else %}
+                        <div class="restaurant-img-placeholder">
+                            <i class="fas fa-store"></i>
+                        </div>
+                    {% endif %}
+                    <div class="restaurant-badge">{{ r.cuisine_type or 'Multi-Cuisine' }}</div>
+                </div>
+                <div class="restaurant-info">
+                    <h3>{{ r.name }}</h3>
+                    <p>{{ r.description[:80] + '...' if r.description and r.description|length > 80 else (r.description or 'Delicious food, fast delivery!') }}</p>
+                    <div class="restaurant-meta">
+                        <span class="rating"><i class="fas fa-star"></i> {{ r.rating or '4.0' }}</span>
+                        <span><i class="fas fa-motorcycle"></i> ₹{{ r.delivery_fee }}</span>
+                        <span><i class="fas fa-clock"></i> 30-45 min</span>
+                    </div>
+                    {% if r.min_order_amount and r.min_order_amount > 0 %}
+                    <small class="text-muted">Min order: ₹{{ r.min_order_amount }}</small>
+                    {% endif %}
+                </div>
+            </a>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <i class="fas fa-store-slash"></i>
+            <h3>No restaurants found</h3>
+            <p>Try adjusting your search or filters.</p>
+            <a href="{{ url_for('customer.restaurants') }}" class="btn btn-primary">Clear Filters</a>
+        </div>
+        {% endif %}
+    </div>
+</section>
+{% endblock %}

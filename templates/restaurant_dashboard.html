@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+{% block title %}Restaurant Dashboard — FoodExpress{% endblock %}
+{% block content %}
+<div class="dashboard-page">
+    <div class="dashboard-header restaurant-header">
+        <div class="container">
+            <div class="dashboard-welcome">
+                <div class="dashboard-avatar restaurant-avatar">
+                    <i class="fas fa-store"></i>
+                </div>
+                <div>
+                    <h1>{{ restaurant.name }}</h1>
+                    <p>{{ restaurant.cuisine_type or 'Restaurant' }} Dashboard</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <!-- Stats -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon orange"><i class="fas fa-shopping-bag"></i></div>
+                <div class="stat-info">
+                    <h3>{{ stats.total_orders or 0 }}</h3>
+                    <p>Total Orders</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon green"><i class="fas fa-rupee-sign"></i></div>
+                <div class="stat-info">
+                    <h3>₹{{ "%.0f"|format(stats.revenue or 0) }}</h3>
+                    <p>Total Revenue</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon red"><i class="fas fa-clock"></i></div>
+                <div class="stat-info">
+                    <h3>{{ stats.pending_orders or 0 }}</h3>
+                    <p>Pending Orders</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon blue"><i class="fas fa-fire"></i></div>
+                <div class="stat-info">
+                    <h3>{{ stats.today_orders or 0 }}</h3>
+                    <p>Today's Orders</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="dashboard-grid">
+            <!-- Quick Actions -->
+            <div class="dashboard-card quick-actions-card">
+                <h3>Quick Actions</h3>
+                <div class="quick-actions">
+                    <a href="{{ url_for('restaurant.orders') }}" class="quick-action-btn">
+                        <i class="fas fa-list-alt"></i><span>View Orders</span>
+                    </a>
+                    <a href="{{ url_for('restaurant.menu_management') }}" class="quick-action-btn">
+                        <i class="fas fa-utensils"></i><span>Manage Menu</span>
+                    </a>
+                    <a href="{{ url_for('restaurant.add_food_item') }}" class="quick-action-btn">
+                        <i class="fas fa-plus-circle"></i><span>Add Item</span>
+                    </a>
+                </div>
+            </div>
+
+            <!-- Active Orders -->
+            <div class="dashboard-card">
+                <div class="card-header-row">
+                    <h3>Active Orders <span class="badge badge-danger">{{ active_orders|length }}</span></h3>
+                    <a href="{{ url_for('restaurant.orders') }}" class="btn btn-sm btn-outline">View All</a>
+                </div>
+                {% if active_orders %}
+                <div class="order-list">
+                    {% for order in active_orders %}
+                    <div class="order-item">
+                        <div class="order-item-info">
+                            <strong>#{{ order.id }} — {{ order.customer_name }}</strong>
+                            <small>{{ order.item_count }} item(s) | ₹{{ "%.2f"|format(order.total_amount) }}</small>
+                            <small>{{ order.created_at.strftime('%I:%M %p') if order.created_at else '' }}</small>
+                        </div>
+                        <div class="order-item-right">
+                            <span class="order-status status-{{ order.status }}">{{ order.status.replace('_',' ').title() }}</span>
+                            <a href="{{ url_for('restaurant.orders') }}" class="btn btn-sm btn-primary">Update</a>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="empty-state small">
+                    <i class="fas fa-check-circle text-green"></i>
+                    <p>No active orders right now.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

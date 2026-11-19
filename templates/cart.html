@@ -1,0 +1,140 @@
+{% extends "base.html" %}
+{% block title %}Shopping Cart — FoodExpress{% endblock %}
+{% block content %}
+<div class="page-header">
+    <div class="container">
+        <h1><i class="fas fa-shopping-cart"></i> Your Cart</h1>
+        {% if restaurant %}<p>from <strong>{{ restaurant.name }}</strong>{% endif %}</p>
+    </div>
+</div>
+
+<section class="section">
+    <div class="container">
+        {% if cart_items %}
+        <div class="cart-layout">
+            <!-- Cart Items -->
+            <div class="cart-items-section">
+                <div class="cart-card">
+                    <div class="cart-header">
+                        <h3>{{ cart_items|length }} Item{{ 's' if cart_items|length > 1 }}</h3>
+                        <button class="btn btn-sm btn-danger" onclick="clearCart()">
+                            <i class="fas fa-trash"></i> Clear Cart
+                        </button>
+                    </div>
+                    {% for item in cart_items %}
+                    <div class="cart-item" id="cartItem-{{ item.id }}">
+                        <div class="cart-item-img">
+                            {% if item.image_url %}
+                                <img src="{{ item.image_url }}" alt="{{ item.name }}"
+                                     onerror="this.src='/static/images/food_placeholder.svg'">
+                            {% else %}
+                                <div class="food-img-placeholder small"><i class="fas fa-utensils"></i></div>
+                            {% endif %}
+                        </div>
+                        <div class="cart-item-info">
+                            <h4>{{ item.name }}</h4>
+                            <span class="cart-item-price">₹{{ "%.2f"|format(item.price) }} each</span>
+                        </div>
+                        <div class="cart-item-controls">
+                            <div class="quantity-control">
+                                <button class="qty-btn" onclick="updateCart({{ item.id }}, {{ item.quantity - 1 }})">−</button>
+                                <span class="qty-display" id="qty-{{ item.id }}">{{ item.quantity }}</span>
+                                <button class="qty-btn" onclick="updateCart({{ item.id }}, {{ item.quantity + 1 }})">+</button>
+                            </div>
+                            <div class="cart-item-total" id="total-{{ item.id }}">
+                                ₹{{ "%.2f"|format(item.item_total) }}
+                            </div>
+                            <button class="btn-icon btn-remove" onclick="updateCart({{ item.id }}, 0)"
+                                    title="Remove item">
+                                <i class="fas fa-trash-alt"></i>
+                            </button>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+
+                <a href="{{ url_for('customer.menu', restaurant_id=restaurant.id if restaurant else 1) }}"
+                   class="btn btn-outline">
+                    <i class="fas fa-plus"></i> Add More Items
+                </a>
+            </div>
+
+            <!-- Order Summary -->
+            <div class="order-summary-section">
+                <div class="order-summary-card">
+                    <h3>Order Summary</h3>
+                    <div class="summary-row">
+                        <span>Subtotal</span>
+                        <span id="summarySubtotal">₹{{ "%.2f"|format(subtotal) }}</span>
+                    </div>
+                    {% if discount > 0 %}
+                    <div class="summary-row discount-row">
+                        <span><i class="fas fa-tag"></i> Discount ({{ discount_rate }}%)</span>
+                        <span class="text-green" id="summaryDiscount">−₹{{ "%.2f"|format(discount) }}</span>
+                    </div>
+                    {% else %}
+                    <div class="summary-row hint-row">
+                        <span><i class="fas fa-info-circle"></i> Add ₹{{ "%.2f"|format(discount_threshold - subtotal) }} more for {{ discount_rate }}% off</span>
+                    </div>
+                    {% endif %}
+                    <div class="summary-row">
+                        <span><i class="fas fa-motorcycle"></i> Delivery Fee</span>
+                        <span>₹{{ "%.2f"|format(delivery_fee) }}</span>
+                    </div>
+                    <div class="summary-divider"></div>
+                    <div class="summary-row summary-total">
+                        <span>Total</span>
+                        <span>₹{{ "%.2f"|format(total) }}</span>
+                    </div>
+
+                    <a href="{{ url_for('customer.checkout') }}" class="btn btn-primary btn-full btn-lg">
+                        <i class="fas fa-credit-card"></i> Proceed to Checkout
+                    </a>
+                    <a href="{{ url_for('customer.restaurants') }}" class="btn btn-outline btn-full">
+                        Continue Shopping
+                    </a>
+                </div>
+
+                <!-- Discount Info -->
+                <div class="discount-info-card">
+                    <i class="fas fa-percent"></i>
+                    <div>
+                        <strong>10% Discount Available!</strong>
+                        <p>Orders above ₹{{ discount_threshold|int }} automatically get {{ discount_rate }}% off.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <i class="fas fa-shopping-cart"></i>
+            <h3>Your cart is empty</h3>
+            <p>Looks like you haven't added anything yet.</p>
+            <a href="{{ url_for('customer.restaurants') }}" class="btn btn-primary btn-lg">
+                <i class="fas fa-utensils"></i> Browse Restaurants
+            </a>
+        </div>
+        {% endif %}
+    </div>
+</section>
+
+{% endblock %}
+{% block extra_js %}
+<script>
+function updateCart(itemId, qty) {
+    fetch('{{ url_for("customer.update_cart") }}', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({food_item_id: itemId, quantity: qty})
+    }).then(r => r.json()).then(data => {
+        if (data.success) location.reload();
+    });
+}
+
+function clearCart() {
+    if (!confirm('Clear your cart?')) return;
+    fetch('{{ url_for("customer.clear_cart") }}', {method: 'POST'})
+    .then(() => location.reload());
+}
+</script>
+{% endblock %}

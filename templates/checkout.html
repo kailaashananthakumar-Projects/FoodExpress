@@ -1,0 +1,132 @@
+{% extends "base.html" %}
+{% block title %}Checkout — FoodExpress{% endblock %}
+{% block content %}
+<div class="page-header">
+    <div class="container">
+        <h1><i class="fas fa-credit-card"></i> Checkout</h1>
+    </div>
+</div>
+
+<section class="section">
+    <div class="container">
+        <div class="checkout-layout">
+            <!-- Checkout Form -->
+            <div class="checkout-form-section">
+                <form method="POST" action="{{ url_for('customer.checkout') }}" id="checkoutForm">
+                    <!-- Delivery Address -->
+                    <div class="checkout-card">
+                        <h3><i class="fas fa-map-marker-alt text-orange"></i> Delivery Address</h3>
+                        <div class="form-group">
+                            <label>Delivery Address *</label>
+                            <textarea name="delivery_address" class="form-control" rows="3" required
+                                      placeholder="Enter your complete delivery address...">{{ customer.address or '' }}</textarea>
+                        </div>
+                    </div>
+
+                    <!-- Payment Method -->
+                    <div class="checkout-card">
+                        <h3><i class="fas fa-wallet text-orange"></i> Payment Method</h3>
+                        <div class="payment-options">
+                            <label class="payment-option active" id="codOption">
+                                <input type="radio" name="payment_method" value="cash_on_delivery" checked>
+                                <div class="payment-option-content">
+                                    <i class="fas fa-money-bill-wave"></i>
+                                    <div>
+                                        <strong>Cash on Delivery</strong>
+                                        <small>Pay when your order arrives</small>
+                                    </div>
+                                </div>
+                                <i class="fas fa-check-circle payment-check"></i>
+                            </label>
+                            <label class="payment-option" id="onlineOption">
+                                <input type="radio" name="payment_method" value="online">
+                                <div class="payment-option-content">
+                                    <i class="fas fa-credit-card"></i>
+                                    <div>
+                                        <strong>Online Payment</strong>
+                                        <small>UPI / Card / Net Banking (Simulated)</small>
+                                    </div>
+                                </div>
+                                <i class="fas fa-check-circle payment-check"></i>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Special Instructions -->
+                    <div class="checkout-card">
+                        <h3><i class="fas fa-comment-dots text-orange"></i> Special Instructions</h3>
+                        <div class="form-group">
+                            <textarea name="special_instructions" class="form-control" rows="2"
+                                      placeholder="Any allergies, special requests for the restaurant..."></textarea>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary btn-full btn-lg" id="placeOrderBtn">
+                        <i class="fas fa-check-circle"></i> Place Order — ₹{{ "%.2f"|format(total) }}
+                    </button>
+                </form>
+            </div>
+
+            <!-- Order Summary -->
+            <div class="checkout-summary-section">
+                <div class="order-summary-card">
+                    <h3>Order from {{ restaurant.name }}</h3>
+                    <div class="checkout-items">
+                        {% for item in cart_items %}
+                        <div class="checkout-item">
+                            <span class="checkout-item-name">{{ item.name }}</span>
+                            <span class="checkout-item-qty">×{{ item.quantity }}</span>
+                            <span class="checkout-item-price">₹{{ "%.2f"|format(item.item_total) }}</span>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    <div class="summary-divider"></div>
+                    <div class="summary-row">
+                        <span>Subtotal</span>
+                        <span>₹{{ "%.2f"|format(subtotal) }}</span>
+                    </div>
+                    {% if discount > 0 %}
+                    <div class="summary-row discount-row">
+                        <span><i class="fas fa-tag"></i> {{ discount_rate }}% Discount</span>
+                        <span class="text-green">−₹{{ "%.2f"|format(discount) }}</span>
+                    </div>
+                    {% endif %}
+                    <div class="summary-row">
+                        <span>Delivery Fee</span>
+                        <span>₹{{ "%.2f"|format(delivery_fee) }}</span>
+                    </div>
+                    <div class="summary-divider"></div>
+                    <div class="summary-row summary-total">
+                        <span>Total Payable</span>
+                        <span>₹{{ "%.2f"|format(total) }}</span>
+                    </div>
+                </div>
+
+                <div class="checkout-info-card">
+                    <p><i class="fas fa-shield-alt text-orange"></i> <strong>Secure Checkout</strong> — Your payment information is protected.</p>
+                    <p><i class="fas fa-undo text-orange"></i> <strong>Free Cancellation</strong> — Cancel before restaurant accepts.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+{% endblock %}
+{% block extra_js %}
+<script>
+// Payment option visual highlight
+document.querySelectorAll('[name="payment_method"]').forEach(radio => {
+    radio.addEventListener('change', function() {
+        document.querySelectorAll('.payment-option').forEach(o => o.classList.remove('active'));
+        this.closest('.payment-option').classList.add('active');
+    });
+});
+
+// Prevent double-submit
+document.getElementById('checkoutForm').addEventListener('submit', function() {
+    const btn = document.getElementById('placeOrderBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Placing Order...';
+});
+</script>
+{% endblock %}

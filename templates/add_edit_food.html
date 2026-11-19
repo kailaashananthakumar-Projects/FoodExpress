@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+{% block title %}{{ 'Edit' if item else 'Add' }} Food Item — Restaurant{% endblock %}
+{% block content %}
+<div class="page-header">
+    <div class="container">
+        <h1><i class="fas fa-{{ 'edit' if item else 'plus-circle' }}"></i> {{ 'Edit' if item else 'Add New' }} Food Item</h1>
+    </div>
+</div>
+<section class="section">
+    <div class="container container-narrow">
+        <div class="form-card">
+            <form method="POST">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Item Name *</label>
+                        <input type="text" name="name" class="form-control" required
+                               value="{{ item.name if item else '' }}" placeholder="e.g. Margherita Pizza">
+                    </div>
+                    <div class="form-group">
+                        <label>Price (₹) *</label>
+                        <input type="number" name="price" class="form-control" required
+                               step="0.01" min="1"
+                               value="{{ '%.2f'|format(item.price) if item else '' }}" placeholder="e.g. 250.00">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Description</label>
+                    <textarea name="description" class="form-control" rows="3"
+                              placeholder="Describe this dish...">{{ item.description if item else '' }}</textarea>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Category</label>
+                        <select name="category_id" class="form-control">
+                            <option value="">-- No Category --</option>
+                            {% for cat in categories %}
+                            <option value="{{ cat.id }}"
+                                {% if item and item.category_id == cat.id %}selected{% endif %}>
+                                {{ cat.name }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Spice Level</label>
+                        <select name="spice_level" class="form-control">
+                            {% for level in ['mild','medium','hot','extra_hot'] %}
+                            <option value="{{ level }}"
+                                {% if item and item.spice_level == level %}selected
+                                {% elif not item and level == 'mild' %}selected{% endif %}>
+                                {{ level.replace('_', ' ').title() }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Preparation Time (minutes)</label>
+                        <input type="number" name="preparation_time" class="form-control"
+                               value="{{ item.preparation_time if item else 20 }}" min="1" max="120">
+                    </div>
+                    <div class="form-group">
+                        <label>Image URL</label>
+                        <input type="url" name="image_url" class="form-control"
+                               value="{{ item.image_url if item else '' }}"
+                               placeholder="https://...">
+                    </div>
+                </div>
+                <div class="form-row checkboxes">
+                    <label class="checkbox-label">
+                        <input type="checkbox" name="is_vegetarian"
+                               {% if item and item.is_vegetarian %}checked{% endif %}>
+                        <i class="fas fa-leaf text-green"></i> Vegetarian
+                    </label>
+                    <label class="checkbox-label">
+                        <input type="checkbox" name="is_available"
+                               {% if not item or item.is_available %}checked{% endif %}>
+                        <i class="fas fa-check-circle text-orange"></i> Available Now
+                    </label>
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary btn-lg">
+                        <i class="fas fa-save"></i> {{ 'Update Item' if item else 'Add to Menu' }}
+                    </button>
+                    <a href="{{ url_for('restaurant.menu_management') }}" class="btn btn-outline btn-lg">Cancel</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</section>
+{% endblock %}

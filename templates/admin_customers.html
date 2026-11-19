@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block title %}Manage Customers — Admin{% endblock %}
+{% block content %}
+<div class="page-header">
+    <div class="container">
+        <div class="admin-nav-pills">
+            <a href="{{ url_for('admin.dashboard') }}" class="pill">Dashboard</a>
+            <a href="{{ url_for('admin.customers') }}" class="pill active">Customers</a>
+            <a href="{{ url_for('admin.restaurants') }}" class="pill">Restaurants</a>
+            <a href="{{ url_for('admin.agents') }}" class="pill">Agents</a>
+            <a href="{{ url_for('admin.orders') }}" class="pill">Orders</a>
+            <a href="{{ url_for('admin.reports') }}" class="pill">Reports</a>
+        </div>
+        <h1><i class="fas fa-users"></i> Customers ({{ customers|length }})</h1>
+    </div>
+</div>
+<section class="section">
+    <div class="container">
+        <div class="table-responsive">
+            <table class="data-table">
+                <thead>
+                    <tr><th>#</th><th>Name</th><th>Email</th><th>Phone</th><th>Total Orders</th><th>Status</th><th>Joined</th><th>Actions</th></tr>
+                </thead>
+                <tbody>
+                    {% for c in customers %}
+                    <tr class="{% if not c.is_active %}row-inactive{% endif %}">
+                        <td>{{ c.id }}</td>
+                        <td>{{ c.name }}</td>
+                        <td>{{ c.email }}</td>
+                        <td>{{ c.phone or '—' }}</td>
+                        <td>{{ c.total_orders }}</td>
+                        <td><span class="badge badge-{{ 'success' if c.is_active else 'danger' }}">{{ 'Active' if c.is_active else 'Inactive' }}</span></td>
+                        <td>{{ c.created_at.strftime('%d %b %Y') if c.created_at else '' }}</td>
+                        <td>
+                            <form method="POST" action="{{ url_for('admin.toggle_customer', customer_id=c.id) }}" style="display:inline">
+                                <button type="submit" class="btn btn-sm btn-{{ 'danger' if c.is_active else 'success' }}">
+                                    {{ 'Deactivate' if c.is_active else 'Activate' }}
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</section>
+{% endblock %}

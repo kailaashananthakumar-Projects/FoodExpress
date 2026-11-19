@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+{% block title %}Menu Management — Restaurant{% endblock %}
+{% block content %}
+<div class="page-header">
+    <div class="container">
+        <div class="page-header-row">
+            <div>
+                <h1><i class="fas fa-utensils"></i> Menu Management</h1>
+                <p>{{ food_items|length }} item{{ 's' if food_items|length != 1 }}</p>
+            </div>
+            <a href="{{ url_for('restaurant.add_food_item') }}" class="btn btn-primary">
+                <i class="fas fa-plus"></i> Add Item
+            </a>
+        </div>
+    </div>
+</div>
+<section class="section">
+    <div class="container">
+        {% if food_items %}
+        <div class="menu-management-grid">
+            {% for item in food_items %}
+            <div class="menu-manage-card {% if not item.is_available %}unavailable-card{% endif %}">
+                <div class="menu-manage-img">
+                    {% if item.image_url %}
+                        <img src="{{ item.image_url }}" alt="{{ item.name }}"
+                             onerror="this.src='/static/images/food_placeholder.svg'">
+                    {% else %}
+                        <div class="food-img-placeholder"><i class="fas fa-utensils"></i></div>
+                    {% endif %}
+                    {% if item.is_vegetarian %}
+                    <span class="veg-badge"><i class="fas fa-leaf"></i></span>
+                    {% endif %}
+                </div>
+                <div class="menu-manage-info">
+                    <h3>{{ item.name }}</h3>
+                    <span class="category-tag">{{ item.category_name or 'Uncategorized' }}</span>
+                    <div class="menu-manage-meta">
+                        <strong class="item-price">₹{{ "%.2f"|format(item.price) }}</strong>
+                        <span class="spice-tag">{{ item.spice_level.title() }}</span>
+                        <span class="prep-time">⏱ {{ item.preparation_time }}min</span>
+                    </div>
+                    <div class="availability-toggle">
+                        <button class="toggle-btn {% if item.is_available %}toggle-on{% else %}toggle-off{% endif %}"
+                                onclick="toggleAvailability({{ item.id }}, this)"
+                                data-item-id="{{ item.id }}">
+                            {{ 'Available' if item.is_available else 'Unavailable' }}
+                        </button>
+                    </div>
+                </div>
+                <div class="menu-manage-actions">
+                    <a href="{{ url_for('restaurant.edit_food_item', item_id=item.id) }}"
+                       class="btn btn-sm btn-outline">
+                        <i class="fas fa-edit"></i> Edit
+                    </a>
+                    <form method="POST" action="{{ url_for('restaurant.delete_food_item', item_id=item.id) }}"
+                          onsubmit="return confirm('Delete {{ item.name }}?')" style="display:inline">
+                        <button type="submit" class="btn btn-sm btn-danger">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </form>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <i class="fas fa-utensils"></i>
+            <h3>No menu items yet</h3>
+            <a href="{{ url_for('restaurant.add_food_item') }}" class="btn btn-primary">Add Your First Item</a>
+        </div>
+        {% endif %}
+    </div>
+</section>
+{% endblock %}
+{% block extra_js %}
+<script>
+function toggleAvailability(itemId, btn) {
+    fetch(`/restaurant/menu/toggle/${itemId}`, {method: 'POST'})
+    .then(r => r.json()).then(data => {
+        if (data.success) {
+            if (data.is_available) {
+                btn.textContent = 'Available';
+                btn.classList.replace('toggle-off', 'toggle-on');
+                btn.closest('.menu-manage-card').classList.remove('unavailable-card');
+            } else {
+                btn.textContent = 'Unavailable';
+                btn.classList.replace('toggle-on', 'toggle-off');
+                btn.closest('.menu-manage-card').classList.add('unavailable-card');
+            }
+        }
+    });
+}
+</script>
+{% endblock %}

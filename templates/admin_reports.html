@@ -1,0 +1,190 @@
+{% extends "base.html" %}
+{% block title %}Sales Reports — Admin{% endblock %}
+{% block extra_css %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+{% endblock %}
+{% block content %}
+<div class="page-header">
+    <div class="container">
+        <div class="admin-nav-pills">
+            <a href="{{ url_for('admin.dashboard') }}" class="pill">Dashboard</a>
+            <a href="{{ url_for('admin.orders') }}" class="pill">Orders</a>
+            <a href="{{ url_for('admin.customers') }}" class="pill">Customers</a>
+            <a href="{{ url_for('admin.restaurants') }}" class="pill">Restaurants</a>
+            <a href="{{ url_for('admin.agents') }}" class="pill">Agents</a>
+            <a href="{{ url_for('admin.reports') }}" class="pill active">Reports</a>
+        </div>
+        <h1><i class="fas fa-chart-bar"></i> Sales Reports</h1>
+    </div>
+</div>
+
+<section class="section">
+    <div class="container">
+        <!-- Period Tabs -->
+        <div class="period-tabs">
+            <a href="?period=daily" class="period-tab {% if period=='daily' %}active{% endif %}">Daily (30 days)</a>
+            <a href="?period=weekly" class="period-tab {% if period=='weekly' %}active{% endif %}">Weekly (12 weeks)</a>
+            <a href="?period=monthly" class="period-tab {% if period=='monthly' %}active{% endif %}">Monthly (12 months)</a>
+        </div>
+
+        <!-- Summary Cards -->
+        {% if totals %}
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon orange"><i class="fas fa-shopping-bag"></i></div>
+                <div class="stat-info">
+                    <h3>{{ totals.total_orders or 0 }}</h3>
+                    <p>Total Orders</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon green"><i class="fas fa-rupee-sign"></i></div>
+                <div class="stat-info">
+                    <h3>₹{{ "%.0f"|format(totals.total_revenue or 0) }}</h3>
+                    <p>Total Revenue</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon blue"><i class="fas fa-calculator"></i></div>
+                <div class="stat-info">
+                    <h3>₹{{ "%.2f"|format(totals.avg_order_value or 0) }}</h3>
+                    <p>Avg Order Value</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon purple"><i class="fas fa-check-double"></i></div>
+                <div class="stat-info">
+                    <h3>{{ totals.delivered or 0 }}</h3>
+                    <p>Delivered</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon red"><i class="fas fa-times-circle"></i></div>
+                <div class="stat-info">
+                    <h3>{{ totals.cancelled or 0 }}</h3>
+                    <p>Cancelled</p>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <div class="dashboard-grid-2">
+            <!-- Revenue Chart -->
+            <div class="dashboard-card">
+                <h3>Revenue Over Time</h3>
+                <canvas id="salesChart" height="200"></canvas>
+            </div>
+            <!-- Top Restaurants -->
+            <div class="dashboard-card">
+                <h3>Top Restaurants by Revenue</h3>
+                {% if top_restaurants %}
+                <div class="top-list">
+                    {% for r in top_restaurants %}
+                    <div class="top-item">
+                        <span class="top-rank">#{{ loop.index }}</span>
+                        <div class="top-info">
+                            <strong>{{ r.name }}</strong>
+                            <small>{{ r.order_count }} orders</small>
+                        </div>
+                        <span class="top-revenue">₹{{ "%.0f"|format(r.revenue or 0) }}</span>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="empty-state small"><p>No data available.</p></div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Top Items -->
+        {% if top_items %}
+        <div class="dashboard-card">
+            <h3><i class="fas fa-fire"></i> Top Selling Items</h3>
+            <div class="table-responsive">
+                <table class="data-table">
+                    <thead>
+                        <tr><th>#</th><th>Item</th><th>Restaurant</th><th>Units Sold</th><th>Revenue</th></tr>
+                    </thead>
+                    <tbody>
+                        {% for item in top_items %}
+                        <tr>
+                            <td>{{ loop.index }}</td>
+                            <td>{{ item.name }}</td>
+                            <td>{{ item.restaurant_name }}</td>
+                            <td>{{ item.total_sold }}</td>
+                            <td>₹{{ "%.2f"|format(item.revenue or 0) }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Sales Data Table -->
+        {% if sales_data %}
+        <div class="dashboard-card">
+            <h3>{{ period.title() }} Breakdown</h3>
+            <div class="table-responsive">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Period</th>
+                            <th>Orders</th>
+                            <th>Delivered</th>
+                            <th>Cancelled</th>
+                            <th>Discounts Given</th>
+                            <th>Revenue</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for row in sales_data %}
+                        <tr>
+                            <td>{{ row.period }}</td>
+                            <td>{{ row.order_count }}</td>
+                            <td>{{ row.delivered_count }}</td>
+                            <td>{{ row.cancelled_count }}</td>
+                            <td>₹{{ "%.2f"|format(row.discounts_given or 0) }}</td>
+                            <td>₹{{ "%.2f"|format(row.revenue or 0) }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</section>
+{% endblock %}
+{% block extra_js %}
+<script>
+const salesData = {{ sales_data | tojson }};
+const labels = salesData.map(d => String(d.period || ''));
+const revenues = salesData.map(d => parseFloat(d.revenue) || 0).reverse();
+const labelsR = labels.slice().reverse();
+
+const ctx = document.getElementById('salesChart');
+if (ctx && salesData.length > 0) {
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: labelsR,
+            datasets: [{
+                label: 'Revenue (₹)',
+                data: revenues,
+                borderColor: '#ff6b00',
+                backgroundColor: 'rgba(255,107,0,0.1)',
+                fill: true,
+                tension: 0.4,
+                pointRadius: 5,
+                pointBackgroundColor: '#ff6b00',
+            }]
+        },
+        options: {
+            responsive: true,
+            scales: { y: { beginAtZero: true } }
+        }
+    });
+}
+</script>
+{% endblock %}
